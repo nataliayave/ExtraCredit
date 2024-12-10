@@ -36,3 +36,22 @@ Compile the code using a C++ compiler. For example, with g++:
  - g++ -o in_memory_db in_memory_db.cpp
 Run the program:
  - ./in_memory_db
+
+Suggested Improvements
+
+If this assignment becomes an official course project, the following improvements can be made:
+
+Clarify Instructions:
+
+ - Specify the expected behavior for nested or overlapping transactions (e.g., should they be allowed?).
+ - Provide clear guidelines on handling invalid keys and operations outside a transaction.
+
+Enhance Features:
+
+ - Add support for additional methods like delete(key) and list_keys().
+ - Extend functionality to support more data types or complex nested transactions.
+
+Grading Enhancements:
+
+ - Include unit tests to verify correctness automatically.
+ - Provide sample input/output scenarios for comprehensive testing.
