@@ -1,13 +1,13 @@
 #include <iostream>
 #include <unordered_map>
-#include <stdexcept>
 #include <string>
+#include <stdexcept>
 
 class InMemoryDB {
 private:
     std::unordered_map<std::string, int> main_state; // Committed data
     std::unordered_map<std::string, int> transaction_state; // Transaction data
-    bool in_transaction = false;
+    bool in_transaction = false; // Transaction status
 
 public:
     // Start a new transaction
@@ -28,14 +28,14 @@ public:
     }
 
     // Retrieve a value for a key
-    int get(const std::string& key) const {
+    int* get(const std::string& key) const {
         if (in_transaction && transaction_state.find(key) != transaction_state.end()) {
-            return transaction_state.at(key);
+            return const_cast<int*>(&transaction_state.at(key));
         }
         if (main_state.find(key) != main_state.end()) {
-            return main_state.at(key);
+            return const_cast<int*>(&main_state.at(key));
         }
-        throw std::runtime_error("Key does not exist.");
+        return nullptr; // Return null pointer if key does not exist
     }
 
     // Commit the transaction
@@ -60,24 +60,63 @@ public:
     }
 };
 
-// Example usage
 int main() {
     InMemoryDB db;
 
     try {
+        // Example 1: Retrieve a non-existent key
+        int* result = db.get("A");
+        if (result) {
+            std::cout << "Value of A: " << *result << "\n";
+        } else {
+            std::cout << "Key A does not exist.\n";
+        }
+
+        // Example 2: Insert without a transaction (should throw an error)
+        try {
+            db.put("A", 5);
+        } catch (const std::exception& e) {
+            std::cout << "Error: " << e.what() << "\n";
+        }
+
+        // Example 3: Begin transaction and update a key
         db.begin_transaction();
         db.put("A", 5);
-        std::cout << "Value of A (within transaction): " << db.get("A") << "\n";
-        db.commit();
-        std::cout << "Value of A (after commit): " << db.get("A") << "\n";
+        result = db.get("A");
+        if (result) {
+            std::cout << "Value of A (within transaction): " << *result << "\n";
+        } else {
+            std::cout << "Key A does not exist (within transaction).\n";
+        }
 
+        // Commit the transaction
+        db.commit();
+        result = db.get("A");
+        if (result) {
+            std::cout << "Value of A (after commit): " << *result << "\n";
+        }
+
+        // Example 4: Attempt rollback and commit without a transaction
+        try {
+            db.rollback();
+        } catch (const std::exception& e) {
+            std::cout << "Error: " << e.what() << "\n";
+        }
+        try {
+            db.commit();
+        } catch (const std::exception& e) {
+            std::cout << "Error: " << e.what() << "\n";
+        }
+
+        // Example 5: Transaction with rollback
         db.begin_transaction();
         db.put("B", 10);
         db.rollback();
-        try {
-            std::cout << "Value of B (after rollback): " << db.get("B") << "\n";
-        } catch (const std::runtime_error& e) {
-            std::cout << "Error: " << e.what() << "\n";
+        result = db.get("B");
+        if (result) {
+            std::cout << "Value of B: " << *result << "\n";
+        } else {
+            std::cout << "Key B does not exist (after rollback).\n";
         }
     } catch (const std::exception& e) {
         std::cout << "Exception: " << e.what() << "\n";
